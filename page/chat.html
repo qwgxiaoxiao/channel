@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+    <head>
+        <title>新建网页</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <link rel="stylesheet" style="text/css" href="../css/talk.css" />
+
+        <script type="text/javascript">
+        //通过ajax去服务器获得用户聊天信息
+        //创建对象方法
+        function createXMLHttp(){
+            if(window.ActiveXObject){
+                var version = ['Msxml2.XMLHTTP.6.0','Msxml2.XMLHTTP.5.0','Msxml2.XMLHTTP.4.0','Msxml2.XMLHTTP.3.0','Msxml2.XMLHTTP','Microsoft.XMLHTTP'];
+
+                for(var i=0,len=version.length; i<len; i++){
+                    var ajaxObj = new ActiveXObject(version[i]);
+                    if(ajaxObj){
+                        break
+                    }
+                }
+
+            } else {
+                var ajaxObj = new XMLHttpRequest();
+            }
+            return ajaxObj;
+        }
+
+        //页面加载完成要调用get_talk()
+        window.onload = function(){
+            get_talk();
+
+            //轮循，每隔3秒就去服务器获得一次聊天信息
+            setInterval("get_talk()", 3000);
+        }
+
+        var maxID = 0;
+
+        //获得聊天信息封装为一个函数执行
+        function get_talk(){
+            var xhr = createXMLHttp();
+            xhr.open('get','../datahandle/data.php?maxID='+maxID,true);
+            
+            xhr.onreadystatechange = function(){
+                if(xhr.readyState==4 && xhr.status==200){
+                    
+                    eval("var info="+xhr.responseText);
+
+                    for(var i=0,len=info.length; i<len; i++){
+                        var id = info[i].id;
+                        var user = info[i].user;
+                        var words = info[i].words;
+                        var ctime = info[i].ctime;
+
+                        var rzt = "("+ctime+")"+user+"&nbsp;："+words;
+                        document.getElementById('show_msg').innerHTML +="<p>"+ rzt+"</p>";
+
+                        maxID = id;
+
+                        //设置滚动条卷起的高度
+                        document.getElementById('show_msg').scrollTop = document.getElementById('show_msg').scrollHeight;
+                    }
+                }
+            }
+
+            xhr.send(null);
+        }
+
+        //用户进行对话聊天
+        function sendContent(){
+            //ajax结构展现
+
+            //通过dom方式将需要的信息获得到
+            var words = document.getElementById('msg').value; 
+
+            var xhr = createXMLHttp();
+            xhr.open('post','../datahandle/save.php',true);
+            xhr.setRequestHeader("content-type","application/x-www-form-urlencoded");
+
+            xhr.onreadystatechange = function(){
+                if(xhr.readyState==4 && xhr.status==200){
+
+                    //设置滚动条卷起的高度
+                    document.getElementById('show_msg').scrollTop = document.getElementById('show_msg').scrollHeight;
+                    
+                    //信息添加完毕马上获得信息显示
+                    get_talk();
+                    maxID++;
+                }
+            }
+
+            xhr.send("&words="+words);
+        }
+        
+        function quit(){
+        		if (confirm("您确定要退出系统吗？"))
+				top.location='../datahandle/login.php';
+				return false;
+        }
+        
+        </script>
+
+        <style type="text/css">
+        </style>
+    </head>
+   <body>
+        <div id="main">
+                <div id="content">
+                    <h2 id="content-title">简易聊天室</h2>
+                    <hr />
+                    <div id="show_msg">
+                    </div>
+                </div>
+                <div id="send">
+                    <div id="control">
+                    <textarea id="msg"></textarea>
+                    <input type="button" value="发送" onclick="sendContent()" />
+                 	  <input type="button" value="退出" onclick="quit()" />
+                    </div>
+                </div>
+        </div>
+    </body>
+</html>
